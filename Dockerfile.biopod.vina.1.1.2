@@ -1,0 +1,50 @@
+# syntax=docker/dockerfile:1
+FROM debian:12.0-slim AS build
+LABEL Description="vina:1.1.2 build"
+
+ENV TZ=America/Chicago \
+    DEBIAN_FRONTEND=noninteractive
+
+WORKDIR /app
+SHELL ["/bin/bash", "-c"]
+
+COPY ./packages/1.1.2/mgltools_x86_64Linux2_1.5.7.tar_.gz \
+     ./packages/1.1.2/mgltools_x86_64Linux2_1.5.7p1.tar.gz /app/
+
+RUN apt-get update && \
+    apt-get -y --no-install-recommends install apt-utils \
+    vim && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+RUN cd /app && \
+    tar -xzf mgltools_x86_64Linux2_1.5.7.tar_.gz && rm mgltools_x86_64Linux2_1.5.7.tar_.gz && \
+    tar -xzf mgltools_x86_64Linux2_1.5.7p1.tar.gz && rm mgltools_x86_64Linux2_1.5.7p1.tar.gz
+
+RUN cd /app && mkdir vina
+
+# Install MGLTools
+RUN cd /app/mgltools_x86_64Linux2_1.5.7 && \
+    ./install.sh -d /app/vina
+
+COPY ./packages/1.1.2/vina_mod ./packages/1.1.2/vina /app/vina/bin/
+
+
+FROM debian:12.0-slim AS runtime
+LABEL Description="vina:1.1.2 runtime"
+
+COPY --from=build /app/vina /app/vina
+
+ENV PATH=/app/vina/bin:${PATH}
+
+ENV TZ=America/Chicago \
+    DEBIAN_FRONTEND=noninteractive
+
+RUN apt-get update && \
+    apt-get -y --no-install-recommends install apt-utils \
+    vim && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
+
+WORKDIR /mnt
+

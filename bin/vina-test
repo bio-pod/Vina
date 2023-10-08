@@ -1,0 +1,6 @@
+#!/usr/bin/env bash
+image_tag=biopod/vina:1.1.2
+
+echo "Testing ${image_tag}..."
+docker run --rm -it ${image_tag} /bin/bash -c 'bash /app/test.sh'
+
